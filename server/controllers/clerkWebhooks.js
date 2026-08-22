@@ -1,12 +1,12 @@
 import User from "../models/User.js";
-import {webhook} from "svix";
+import {Webhook} from "svix";
 
 const clerkWebhooks = async (req, res)=>{
     try {
         const whook = new Webhook(process.env.CLERK_WEBHOOK_SECRET)
 
         const headers = {
-            "svix-id" : req.headers["svix-timestamp"],
+            "svix-id" : req.headers["svix-id"],
             "svix-timestamp" : req.headers["svix-timestamp"],
             "svix-signature" : req.headers["svix-signature"],
             
@@ -37,7 +37,7 @@ const clerkWebhooks = async (req, res)=>{
             default:
                 break;
         }
-        res.json({success: false,message: error.message });
+        res.json({success: true ,message: "Webhook processed successfully" });
 
         } catch (error){
             console.log(error.message);
