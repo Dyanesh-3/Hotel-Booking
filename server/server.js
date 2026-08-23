@@ -9,7 +9,7 @@ connectDB();
 
 const app = express();
 
-app.use(cors());
+app.use(cors({ origin: process.env.FRONTEND_URL }));
 
 // IMPORTANT:
 // Webhook route must come BEFORE express.json()
