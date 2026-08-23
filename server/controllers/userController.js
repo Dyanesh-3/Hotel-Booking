@@ -19,8 +19,13 @@ export const getMe = async (req, res) => {
         // Manually verify the Clerk session token
         let clerkUserId;
         try {
+            const secretKey = process.env.CLERK_SECRET_KEY?.trim();
+            console.log("Secret Key length:", secretKey?.length);
+            console.log("Secret Key starts with:", secretKey?.substring(0, 15));
+            console.log("Secret Key ends with:", secretKey?.substring(secretKey?.length - 5));
+
             const payload = await verifyToken(token, {
-                secretKey: process.env.CLERK_SECRET_KEY,
+                secretKey: secretKey,
             });
             clerkUserId = payload.sub;
             console.log("Token verified, userId:", clerkUserId);
