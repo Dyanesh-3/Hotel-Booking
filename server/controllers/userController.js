@@ -1,10 +1,5 @@
 import User from "../models/User.js";
-import { createClerkClient } from "@clerk/express";
-
-const clerkClient = createClerkClient({
-    secretKey: process.env.CLERK_SECRET_KEY,
-    publishableKey: process.env.CLERK_PUBLISHABLE_KEY,
-});
+import { verifyToken } from "@clerk/express";
 
 // GET /api/users/me
 // Returns the logged-in user's data from MongoDB using their Clerk ID
@@ -24,7 +19,9 @@ export const getMe = async (req, res) => {
         // Manually verify the Clerk session token
         let clerkUserId;
         try {
-            const payload = await clerkClient.verifyToken(token);
+            const payload = await verifyToken(token, {
+                secretKey: process.env.CLERK_SECRET_KEY,
+            });
             clerkUserId = payload.sub;
             console.log("Token verified, userId:", clerkUserId);
         } catch (verifyError) {
