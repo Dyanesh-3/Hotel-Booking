@@ -13,7 +13,21 @@ const clerkWebhooks = async (req, res) => {
         };
 
         // req.body is RAW BUFFER
-        const payload = req.body.toString();
+        let payload;
+        if (typeof req.body === "string") {
+            payload = req.body;
+        } else if (Buffer.isBuffer(req.body)) {
+            payload = req.body.toString('utf8');
+        } else if (typeof req.body === "object") {
+            payload = JSON.stringify(req.body);
+            console.log("WARNING: Vercel pre-parsed the body into an object. Signature verification might fail due to formatting differences.");
+        } else {
+            payload = req.body?.toString();
+        }
+
+        console.log("Webhook payload type:", typeof req.body, "IsBuffer:", Buffer.isBuffer(req.body));
+        console.log("Payload start:", payload?.substring(0, 50));
+        console.log("Using Webhook Secret starting with:", process.env.CLERK_WEBHOOK_SECRET?.substring(0, 10));
 
         await whook.verify(payload, headers);
 
