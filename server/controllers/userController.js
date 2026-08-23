@@ -4,7 +4,11 @@ import User from "../models/User.js";
 // Returns the logged-in user's data from MongoDB using their Clerk ID
 export const getMe = async (req, res) => {
     try {
-        const clerkUserId = req.auth.userId;
+        console.log("=== /api/users/me called ===");
+        console.log("req.auth:", JSON.stringify(req.auth));
+        console.log("Authorization header:", req.headers.authorization?.substring(0, 30));
+
+        const clerkUserId = req.auth?.userId;
 
         if (!clerkUserId) {
             return res.status(401).json({ success: false, message: "Unauthorized" });
