@@ -26,11 +26,7 @@ app.post(
 // Normal JSON middleware
 app.use(express.json());
 
-// Clerk middleware - keys passed explicitly for Vercel serverless compatibility
-app.use(clerkMiddleware({
-    publishableKey: process.env.CLERK_PUBLISHABLE_KEY,
-    secretKey: process.env.CLERK_SECRET_KEY,
-}));
+
 
 // User routes
 app.use("/api/users", userRoutes);
