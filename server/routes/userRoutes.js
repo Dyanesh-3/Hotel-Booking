@@ -1,10 +1,12 @@
 import express from "express";
-import { getMe } from "../controllers/userController.js";
+import { protect } from "../middleware/authMiddleware.js";
+import {getUserData, storeRecentSearchedCities} from "../controllers/userController.js"
 
-const router = express.Router();
+const userRouter = express.Router();
 
 // GET /api/users/me - get current logged-in user from MongoDB
 // Auth is handled inside the controller via req.auth from clerkMiddleware
-router.get("/me", getMe);
+userRouter.get('/', protect, getUserData);
+userRouter.post('/store-recent-search', protect, storeRecentSearchedCities);
 
-export default router;
+export default userRouter;
