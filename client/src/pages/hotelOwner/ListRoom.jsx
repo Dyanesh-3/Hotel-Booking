@@ -6,7 +6,7 @@ import { toast } from 'react-hot-toast'
 const ListRoom = () => {
 
     const [rooms, setRooms] = useState([])
-    const { axios, getToken, user } = useAppContext()
+    const { axios, getToken, user, currency } = useAppContext()
 
     // Fetch Rooms of the Hotel Owner
     const fetchRooms = async () => {
@@ -19,7 +19,7 @@ const ListRoom = () => {
             })
             
             if (data.success){
-                setRooms(data.rooms || [])
+                setRooms(data. rooms || [])
             } else {
                 toast.error(data.message)
             }

@@ -1,3 +1,4 @@
+import transporter from "../configs/nodemailer.js";
 import Booking from "../models/Booking.js";
 import Hotel from "../models/hotel.js";
 import Room from "../models/Room.js";
@@ -34,7 +35,7 @@ export const checkAvailabilityAPI = async (req, res) => {
 
 export const createBooking = async (req, res) => {
     try {
-        const { room, checkInDate, checkOutDate, guests } = req.body;
+        const { room, checkInDate, checkOutDate, guests, userEmail } = req.body;
         const user = req.user._id;
 
         const isAvailable = await checkAvailability({
@@ -68,6 +69,46 @@ export const createBooking = async (req, res) => {
             checkOutDate: checkOut,
             totalPrice,
         });
+
+        // Determine real recipient email
+        let recipientEmail = req.user.email;
+        if (userEmail && (!recipientEmail || recipientEmail.endsWith('@clerkuser.com'))) {
+            recipientEmail = userEmail;
+            try {
+                req.user.email = userEmail;
+                await req.user.save();
+            } catch (saveErr) {
+                console.log("Could not update user email in DB:", saveErr.message);
+            }
+        }
+
+        const mailOptions = {
+            from: process.env.SENDER_EMAIL,
+            to: recipientEmail,
+            subject: "Hotel Booking Details",
+            html: `
+            <h2>Booking Details</h2>
+            <p>Dear ${req.user?.username || 'Guest'},</p>
+            <p>Thank you for choosing us for your stay. Your booking is confirmed! Please review the details below.</p>
+            <ul>
+                <li><strong>Booking ID:</strong> ${booking._id}</li>
+                <li><strong>Hotel Name:</strong> ${roomData.hotel?.name || 'Hotel'}</li>
+                <li><strong>Location:</strong> ${roomData.hotel?.address || 'Location'}</li>
+                <li><strong>Date:</strong> ${booking.checkInDate ? new Date(booking.checkInDate).toDateString() : ''}</li>
+                <li><strong>Booking Amount:</strong> ${process.env.CURRENCY || '$'} ${booking.totalPrice}</li>
+            </ul>
+            <p>We look forward to welcoming you!</p>
+            <p>If you have any questions, please feel free to contact us.</p>
+            `
+        };
+
+        try {
+            console.log("Sending booking confirmation email to:", recipientEmail);
+            const mailInfo = await transporter.sendMail(mailOptions);
+            console.log("Email sent successfully. MessageId:", mailInfo.messageId);
+        } catch (emailError) {
+            console.error("Email sending failed:", emailError.message);
+        }
         res.json({ success: true, message: "Booking created successfully" })
 
     } catch (error) {
