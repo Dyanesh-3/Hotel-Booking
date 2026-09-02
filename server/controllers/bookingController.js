@@ -1,6 +1,6 @@
 import transporter from "../configs/nodemailer.js";
 import Booking from "../models/Booking.js";
-import Hotel from "../models/hotel.js";
+import Hotel from "../models/Hotel.js";
 import Room from "../models/Room.js";
 
 //Function to check availablity of Room
