@@ -28,6 +28,7 @@ app.use('/api/user', userRouter)
 app.use('/api/hotels', hotelRouter)
 app.use('/api/room', roomRouter)
 app.use('/api/bookings', bookingRouter)
+app.use('/api/booking', bookingRouter)
 
 
 const PORT = process.env.PORT || 3000;
