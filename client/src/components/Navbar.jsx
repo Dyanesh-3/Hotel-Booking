@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { assets } from '../assets/assets';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useClerk, useUser, useAuth, UserButton } from '@clerk/clerk-react';
-
+import { Link,  useLocation } from 'react-router-dom';
+import { useClerk, UserButton } from '@clerk/clerk-react';
+import { useAppContext } from "../context/AppContext";
 const BookIcon = () => (
     <svg
         className="w-4 h-4 text-gray-700"
@@ -37,20 +37,10 @@ const Navbar = () => {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-    // Clerk user
-    const { user } = useUser();
-
-    // Added: get authentication token
-    const { getToken } = useAuth();
-
-    // Added: MongoDB user
-    const [mongoUser, setMongoUser] = useState(null);
-
-    const navigate = useNavigate();
     const location = useLocation();
+    const { user, navigate, isOwner, setShowHotelReg } = useAppContext();
 
     useEffect(() => {
-
         if (location.pathname !== "/") {
             setIsScrolled(true);
             return;
@@ -63,74 +53,9 @@ const Navbar = () => {
         };
 
         window.addEventListener("scroll", handleScroll);
-
         return () => window.removeEventListener("scroll", handleScroll);
-
     }, [location.pathname]);
 
-
-    // =====================================================
-    // ADDED PART:
-    // Get logged-in Clerk user's data from MongoDB
-    // =====================================================
-
-    useEffect(() => {
-
-        const fetchMongoUser = async () => {
-
-            // If user is not logged in
-            if (!user) {
-                setMongoUser(null);
-                return;
-            }
-
-            try {
-
-                // Get Clerk authentication token
-                const token = await getToken();
-
-                // Send token to backend
-                const response = await fetch(
-                    `${import.meta.env.VITE_BACKEND_URL}/api/users/me`,
-                    {
-                        method: "GET",
-
-                        headers: {
-                            Authorization: `Bearer ${token}`
-                        }
-                    }
-                );
-
-                const data = await response.json();
-
-                console.log("MongoDB user:", data);
-
-                if (data.success) {
-
-                    setMongoUser(data.user);
-
-                } else {
-
-                    console.log(
-                        "MongoDB user error:",
-                        data.message
-                    );
-
-                }
-
-            } catch (error) {
-
-                console.error(
-                    "Error fetching MongoDB user:",
-                    error
-                );
-
-            }
-        };
-
-        fetchMongoUser();
-
-    }, [user, getToken]);
 
 
     return (
@@ -197,16 +122,22 @@ const Navbar = () => {
 
                     </Link>
                 ))}
-
                 <button
                     className={`border px-4 py-1 text-sm font-light rounded-full cursor-pointer ${
-                        isScrolled ? 'text-black' : 'text-white'
-                    } transition-all`}
-                    onClick={() => navigate('/owner')}
+                        isScrolled ? 'text-black border-gray-400' : 'text-white border-white/70'
+                    } hover:opacity-90 transition-all`}
+                    onClick={() => {
+                        if (!user) {
+                            openSignIn({});
+                        } else if (isOwner) {
+                            navigate('/owner');
+                        } else {
+                            setShowHotelReg(true);
+                        }
+                    }}
                 >
-                    Dashboard
+                    {isOwner ? 'Dashboard' : 'List Your Hotel'}
                 </button>
-
             </div>
 
 
@@ -242,8 +173,8 @@ const Navbar = () => {
                 ) : (
 
                     <button
-                        onClick={openSignIn}
-                        className="bg-black text-white px-8 py-2.5 rounded-full ml-4 transition-all duration-500"
+                        onClick={() => openSignIn({})}
+                        className="bg-black text-white px-8 py-2.5 rounded-full ml-4 transition-all duration-500 cursor-pointer hover:bg-gray-800"
                     >
                         Login
                     </button>
@@ -298,7 +229,7 @@ const Navbar = () => {
             >
 
                 <button
-                    className="absolute top-4 right-4"
+                    className="absolute top-4 right-4 cursor-pointer"
                     onClick={() => setIsMenuOpen(false)}
                 >
                     <img
@@ -321,20 +252,21 @@ const Navbar = () => {
 
                 ))}
 
-
-                {user && (
-
-                    <button
-                        className="border px-4 py-1 text-sm font-light rounded-full cursor-pointer transition-all"
-                        onClick={() => {
-                            setIsMenuOpen(false);
+                <button
+                    className="border border-gray-300 px-4 py-1 text-sm font-light rounded-full cursor-pointer transition-all"
+                    onClick={() => {
+                        setIsMenuOpen(false);
+                        if (!user) {
+                            openSignIn({});
+                        } else if (isOwner) {
                             navigate('/owner');
-                        }}
-                    >
-                        Dashboard
-                    </button>
-
-                )}
+                        } else {
+                            setShowHotelReg(true);
+                        }
+                    }}
+                >
+                    {isOwner ? 'Dashboard' : 'List Your Hotel'}
+                </button>
 
 
                 {!user && (
@@ -342,9 +274,9 @@ const Navbar = () => {
                     <button
                         onClick={() => {
                             setIsMenuOpen(false);
-                            openSignIn();
+                            openSignIn({});
                         }}
-                        className="bg-black text-white px-8 py-2.5 rounded-full transition-all duration-500"
+                        className="bg-black text-white px-8 py-2.5 rounded-full transition-all duration-500 cursor-pointer"
                     >
                         Login
                     </button>

@@ -4,7 +4,7 @@ import { assets } from '../assets/assets'
 
 const Hotelcard = ({room, index}) => {
   return (
-                <Link to={'/rooms/' + room._id} onClick={() => scrollTo(0,0)} keys={room._id} className='relative max-w-70 w-full rounded-xl overflow-hidden bg-white text-gray-500/90 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.05)]'>
+                <Link to={'/rooms/' + room._id} onClick={() => scrollTo(0,0)} keys={room._id} className='relative w-full rounded-xl overflow-hidden bg-white text-gray-500/90 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.05)]'>
                         <img src={room.images[0]} alt="" className='w-full h-48 object-cover block' />
                 {index % 2 === 0 && (
                     <p className='absolute top-3 left-3 px-3 py-1 text-xs bg-white text-gray-800 font-medium rounded-full shadow-md z-20'>
