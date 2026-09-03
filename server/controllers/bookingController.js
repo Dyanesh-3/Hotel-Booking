@@ -2,6 +2,7 @@ import transporter from "../configs/nodemailer.js";
 import Booking from "../models/Booking.js";
 import Hotel from "../models/Hotel.js";
 import Room from "../models/Room.js";
+import Stripe from "stripe";
 
 //Function to check availablity of Room
 const checkAvailability = async ({ checkInDate, checkOutDate, room }) => {
@@ -146,5 +147,56 @@ export const getHotelBookings = async (req, res) => {
     } catch (error) {
         res.json({ success: false, message: "Failed to fetch bookings" })
     }
-
 } 
+
+export const stripePayment = async (req, res) => {
+    try {
+        const { bookingId } = req.body;
+
+        const booking = await Booking.findById(bookingId);
+        if (!booking) {
+            return res.json({ success: false, message: "Booking not found" });
+        }
+
+        // Bug fix 1: findId → findById
+        const roomData = await Room.findById(booking.room).populate('hotel');
+        const totalPrice = booking.totalPrice;
+        const { origin } = req.headers;
+
+        // Bug fix 2: stripe is a constructor - initialize correctly
+        const stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+        // Bug fix 3: line_items must be an ARRAY [], not an object {}
+        // Bug fix 4: price_data needs { currency, unit_amount, product_data } - not just "usd"
+        const line_items = [
+            {
+                price_data: {
+                    currency: "usd",
+                    product_data: {
+                        name: roomData.hotel.name,
+                    },
+                    unit_amount: totalPrice * 100,
+                },
+                quantity: 1,
+            }
+        ];
+
+        // Bug fix 5: sessions.create() not sessions.created()
+        // Bug fix 6: checkout.sessions (lowercase) not Checkout.sessions
+        const session = await stripeInstance.checkout.sessions.create({
+            line_items,
+            mode: "payment",
+            success_url: `${origin}/loader/my-bookings`,
+            cancel_url: `${origin}/my-bookings`,
+            metadata: {
+                bookingId,
+            }
+        });
+
+        res.json({ success: true, url: session.url });
+
+    } catch (error) {
+        console.error("Stripe payment error:", error.message);
+        res.json({ success: false, message: error.message });
+    }
+}
