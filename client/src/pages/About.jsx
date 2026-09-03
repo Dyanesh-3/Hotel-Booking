@@ -14,7 +14,7 @@ const values = [
   {
     icon: assets.badgeIcon,
     title: 'Trusted Quality',
-    description: 'Every property listed on QuickStay is verified for comfort, safety and service standards.',
+    description: 'Every property listed on veloreStay is verified for comfort, safety and service standards.',
   },
   {
     icon: assets.heartIcon,
@@ -40,7 +40,7 @@ const About = () => {
           OUR STORY
         </p>
         <h1 className="font-playfair text-3xl md:text-5xl text-gray-800 mt-4 max-w-2xl">
-          About QuickStay
+          About veloreStay
         </h1>
         <p className="text-gray-500 text-sm md:text-base mt-4 max-w-xl leading-relaxed">
           We connect travelers with extraordinary places to stay — from boutique hotels to
@@ -52,19 +52,19 @@ const About = () => {
       <div className="flex flex-col md:flex-row items-center gap-10 px-6 md:px-16 lg:px-24 xl:px-32 py-20">
         <img
           src={assets.regImage}
-          alt="About QuickStay"
+          alt="About veloreStay"
           className="w-full md:w-1/2 rounded-xl shadow-md object-cover max-h-96"
         />
         <div className="w-full md:w-1/2">
-          <h2 className="font-playfair text-2xl md:text-3xl text-gray-800">Why We Started QuickStay</h2>
+          <h2 className="font-playfair text-2xl md:text-3xl text-gray-800">Why We Started veloreStay</h2>
           <p className="text-gray-500 mt-4 leading-relaxed">
             Booking a hotel shouldn't mean sifting through endless listings and second-guessing
-            the photos. QuickStay was built to bring together carefully selected properties,
+            the photos. veloreStay was built to bring together carefully selected properties,
             transparent pricing and a booking flow that takes minutes, not hours.
           </p>
           <p className="text-gray-500 mt-4 leading-relaxed">
             Today, hotel owners across {cities.join(', ')} and beyond list their properties on
-            QuickStay, giving travelers a single place to find a stay that actually fits how
+            veloreStay, giving travelers a single place to find a stay that actually fits how
             they like to travel.
           </p>
           <button
@@ -92,7 +92,7 @@ const About = () => {
       <div className="flex flex-col items-center px-6 md:px-16 lg:px-24 py-20">
         <Title
           title="What We Stand For"
-          subTitle="The principles that guide every property we bring onto QuickStay."
+          subTitle="The principles that guide every property we bring onto veloreStay."
         />
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-16 w-full">

@@ -56,7 +56,7 @@ const Experience = () => {
         <div className="relative rounded-2xl overflow-hidden h-[380px] md:h-[420px]">
           <img
             src={assets.heroImage}
-            alt="QuickStay Experiences"
+            alt="veloreStay Experiences"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-black/45 flex flex-col items-center justify-center text-center px-6">
@@ -67,7 +67,7 @@ const Experience = () => {
               Experiences Beyond the Stay
             </h1>
             <p className="text-white/90 text-sm md:text-base mt-4 max-w-xl leading-relaxed">
-              Every QuickStay booking opens the door to something more — adventure, wellness,
+              Every veloreStay booking opens the door to something more — adventure, wellness,
               cuisine and comfort, tailored to how you like to travel.
             </p>
           </div>
@@ -78,7 +78,7 @@ const Experience = () => {
       <div className="flex flex-col items-center px-6 md:px-16 lg:px-24 py-20">
         <Title
           title="What You Can Experience"
-          subTitle="Handpicked moments woven into every stay, no matter which QuickStay property you choose."
+          subTitle="Handpicked moments woven into every stay, no matter which veloreStay property you choose."
         />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-16 w-full">
