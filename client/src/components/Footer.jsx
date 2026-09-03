@@ -8,7 +8,7 @@ const Footer = () => {
                 <div className='max-w-80'>
                     <img src={assets.logo} alt="logo" className='mb-4 h-8 md:h-9 invert opacity-80' />
                     <p className='text-sm'>
-                        Discover the worls's most extraordinary places to stay, from boutique hotels to luxury villas and private islands.
+                        Discover the world's most extraordinary places to stay, from boutique hotels to luxury villas and private islands.
                     </p>
                     <div className='flex items-center gap-3 mt-4'>
                         {/* Instagram */}
@@ -57,7 +57,7 @@ const Footer = () => {
             </div>
             <hr className='border-gray-300 mt-8' />
             <div className='flex flex-col md:flex-row gap-2 items-center justify-between py-5'>
-                <p>© {new Date().getFullYear()} GreatStack. All rights reserved.</p>
+                <p>© {new Date().getFullYear()} veloreStay. All rights reserved.</p>
                 <ul className='flex items-center gap-4'>
                     <li><a href="#">Privacy</a></li>
                     <li><a href="#">Terms</a></li>

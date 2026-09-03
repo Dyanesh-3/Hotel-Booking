@@ -7,7 +7,7 @@ import { testimonials } from '../assets/assets'
 const Testimonial = () => {
   return (
     <div className='flex flex-col items-center px-6 md:px-16 lg:px-24 bg-slate-50 pt-20 pb-30'>
-        <Title title="What Our Guests Say" subTitle="Discover why discerning travelers consistently choose QuickStay for their exclusive and luxurious accommodations around the world."/>
+        <Title title="What Our Guests Say" subTitle="Discover why discerning travelers consistently choose veloreStay for their exclusive and luxurious accommodations around the world."/>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-20 w-full">
                 {testimonials.map((testimonial) => (
                     <div key={testimonial.id} className="bg-white p-6 rounded-xl shadow min-h-55">
