@@ -7,6 +7,8 @@ import Home from './pages/Home'
 import AllRooms from './pages/AllRooms'
 import RoomDetails from './pages/RoomDetails'
 import MyBookings from './pages/MyBookings'
+import About from './pages/About'
+import Experience from './pages/Experience'
 import Layout from './pages/hotelOwner/Layout'
 import Dashboard from './pages/hotelOwner/Dashboard'
 import AddRoom from './pages/hotelOwner/AddRoom'
@@ -31,6 +33,8 @@ const App = () => {
           <Route path='/hotels' element={<AllRooms />} />
           <Route path='/rooms/:id' element={<RoomDetails />} />
           <Route path='/my-bookings' element={<MyBookings />} />
+          <Route path='/about' element={<About />} />
+          <Route path='/experience' element={<Experience />} />
           <Route path='/loader/:nextUrl' element={<Loader />} />
 
           <Route path='/owner' element={<Layout />} >
