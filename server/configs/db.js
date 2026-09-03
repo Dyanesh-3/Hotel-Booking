@@ -1,18 +1,26 @@
 import mongoose from "mongoose";
 
-const connectDB = async () => {
-    try {
-        mongoose.connection.on("connected", () => {
-            console.log("Database Connected");
-        });
+let isConnected = false;
 
+const connectDB = async () => {
+    if (isConnected || mongoose.connection.readyState === 1) {
+        return;
+    }
+
+    try {
         const uri = process.env.MONGODB_URI.includes('/hotel-booking')
             ? process.env.MONGODB_URI
             : `${process.env.MONGODB_URI}/hotel-booking`;
-        await mongoose.connect(uri);
-        
+
+        const db = await mongoose.connect(uri, {
+            serverSelectionTimeoutMS: 5000,
+        });
+
+        isConnected = db.connections[0].readyState === 1;
+        console.log("Database Connected");
     } catch (error) {
-        console.log("MongoDB connection error:", error.message);
+        console.error("MongoDB connection error:", error.message);
+        throw error;
     }
 };
 
