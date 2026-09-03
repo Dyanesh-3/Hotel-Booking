@@ -24,6 +24,16 @@ app.post('/api/stripe', express.raw({type: "application/json"}), stripeWebhooks)
 app.use(express.json())
 app.use(clerkMiddleware())
 
+// Ensure DB connected before processing API requests (crucial for Vercel serverless)
+app.use(async (req, res, next) => {
+    try {
+        await connectDB();
+        next();
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Database connection failed" });
+    }
+});
+
 // User routes
 app.use("/api/users", clerkWebhooks)
 
