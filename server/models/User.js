@@ -24,8 +24,14 @@ const userSchema = new mongoose.Schema(
 
         role: {
             type: String,
-            enum: ["user", "hotelOwner"],
+            enum: ["user", "hotelOwner", "admin"],
             default: "user"
+        },
+
+        status: {
+            type: String,
+            enum: ["active", "suspended"],
+            default: "active"
         },
 
         recentSearchedCities: {

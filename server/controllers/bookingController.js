@@ -54,10 +54,33 @@ export const createBooking = async (req, res) => {
             return res.json({ success: false, message: "Room not found" });
         }
 
-        let totalPrice = roomData.pricePerNight;
+        if (roomData.hotel.status !== "approved" || !roomData.hotel.isActive) {
+            return res.status(403).json({ success: false, message: "Hotel is not currently available for booking." });
+        }
 
         const checkIn = new Date(checkInDate);
         const checkOut = new Date(checkOutDate);
+
+        if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
+            return res.status(400).json({ success: false, message: "Invalid date format." });
+        }
+        
+        // Truncate times for 'today' comparison to avoid timezone boundary issues
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const checkInStartOfDay = new Date(checkIn);
+        checkInStartOfDay.setHours(0,0,0,0);
+
+        if (checkInStartOfDay < today) {
+            return res.status(400).json({ success: false, message: "Check-in date cannot be in the past." });
+        }
+
+        if (checkOut <= checkIn) {
+            return res.status(400).json({ success: false, message: "Check-out date must be after check-in date." });
+        }
+
+        let totalPrice = roomData.pricePerNight;
+
         const timeDiff = checkOut.getTime() - checkIn.getTime();
         const nights = Math.max(1, Math.ceil(timeDiff / (1000 * 3600 * 24)));
         totalPrice *= nights;
@@ -132,7 +155,7 @@ export const getUserBookings = async (req, res) => {
 
 export const getHotelBookings = async (req, res) => {
     try {
-        const hotel = await Hotel.findOne({ owner: req.auth.userId });
+        const hotel = await Hotel.findOne({ owner: req.user._id });
         if (!hotel) {
             return res.json({ success: false, message: "No Hotel found" })
         }
@@ -142,12 +165,22 @@ export const getHotelBookings = async (req, res) => {
 
         const totalRevenue = bookings.reduce((acc, booking) => acc + booking.totalPrice, 0)
 
-        res.json({ success: true, dashboardData: { totalBookings, totalRevenue, bookings } })
+        res.json({ 
+            success: true, 
+            dashboardData: { 
+                totalBookings, 
+                totalRevenue, 
+                bookings,
+                status: hotel.status,
+                rejectionReason: hotel.rejectionReason,
+                suspensionReason: hotel.suspensionReason
+            } 
+        })
 
     } catch (error) {
         res.json({ success: false, message: "Failed to fetch bookings" })
     }
-} 
+}
 
 export const stripePayment = async (req, res) => {
     try {

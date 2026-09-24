@@ -10,10 +10,7 @@ const Home = () => {
   return (
   <>
     <Hero />
-    <RecommendedHotels />
     <FeaturedDestination />
-    <ExclusiveOffers />
-    <Testimonial/>
     <Newsletter/>
   </>
   )

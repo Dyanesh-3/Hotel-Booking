@@ -26,9 +26,9 @@ export const createRoom = async (req, res) => {
                 console.error("Cloudinary upload error:", cloudErr);
                 // If Cloudinary credentials are rejected (403), provide clear message
                 if (cloudErr.http_code === 403 || cloudErr.message?.includes("403")) {
-                    return res.json({ 
-                        success: false, 
-                        message: "Cloudinary 403 Forbidden: Invalid or expired Cloudinary credentials. Please check CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in server/.env" 
+                    return res.json({
+                        success: false,
+                        message: "Cloudinary 403 Forbidden: Invalid or expired Cloudinary credentials. Please check CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in server/.env"
                     });
                 }
                 throw cloudErr;
@@ -51,13 +51,18 @@ export const createRoom = async (req, res) => {
 
 export const getRooms = async (req, res) => {
     try {
-        const rooms = await Room.find({ isAvailable: true }).populate({
+        const roomsRaw = await Room.find({ isAvailable: true }).populate({
             path: 'hotel',
+            match: { status: 'approved', isActive: true },
             populate: {
                 path: 'owner',
                 select: 'image'
             }
         }).sort({ createdAt: -1 });
+
+        // Filter out rooms whose hotel did not match the condition (hotel will be null)
+        const rooms = roomsRaw.filter(room => room.hotel !== null);
+
         res.json({ success: true, rooms });
     } catch (error) {
         res.json({ success: false, message: error.message });
@@ -80,10 +85,23 @@ export const getOwnerRooms = async (req, res) => {
 export const toggleRoomAvailability = async (req, res) => {
     try {
         const { roomId } = req.body;
+        const owner = req.user._id;
+
+        // Check if the owner's hotel matches the room's hotel
+        const hotel = await Hotel.findOne({ owner });
+        if (!hotel) {
+            return res.json({ success: false, message: "No Hotel found for owner" });
+        }
+
         const roomData = await Room.findById(roomId);
         if (!roomData) {
             return res.json({ success: false, message: "Room not found" });
         }
+
+        if (roomData.hotel.toString() !== hotel._id.toString()) {
+            return res.json({ success: false, message: "Unauthorized to modify this room" });
+        }
+
         roomData.isAvailable = !roomData.isAvailable;
         await roomData.save();
         res.json({ success: true, message: "Room availability Updated" });

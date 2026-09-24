@@ -3,13 +3,14 @@ import { assets, cities } from '../assets/assets'; // Added cities import
 import { useAppContext } from '../context/AppContext';
 import { useAuth, useUser, useClerk } from '@clerk/clerk-react';
 import { toast } from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
 const HotelReg = () => {
 
     const { setShowHotelReg, axios, setIsOwner, fetchUser } = useAppContext();
     const { getToken, isSignedIn } = useAuth();
     const { user } = useUser();
-    const { openSignIn } = useClerk();
+    const navigate = useNavigate();
      
     const [name, setName] = useState("");
     const [address, setAddress] = useState("");
@@ -23,7 +24,7 @@ const HotelReg = () => {
             if (!isSignedIn || !user) {
                 toast.error("Please log in first to register your hotel");
                 setShowHotelReg(false);
-                openSignIn({});
+                navigate('/sign-in');
                 return;
             }
 
@@ -32,7 +33,7 @@ const HotelReg = () => {
             if (!token) {
                 toast.error("Session expired. Please log in again.");
                 setShowHotelReg(false);
-                openSignIn({});
+                navigate('/sign-in');
                 return;
             }
 

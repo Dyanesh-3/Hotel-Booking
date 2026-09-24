@@ -16,6 +16,8 @@ export const AppProvider = ({ children }) => {
     const { getToken, isSignedIn } = useAuth();
 
     const [isOwner, setIsOwner] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [isSuspended, setIsSuspended] = useState(false);
     const [showHotelReg, setShowHotelReg] = useState(false);
     const [searchedCities, setSearchedCities] = useState([]);
     const [rooms, setRooms] = useState([]);
@@ -46,7 +48,9 @@ export const AppProvider = ({ children }) => {
             });
 
             if (data.success) {
-                setIsOwner(data.role === "hotelOwner");
+                setIsOwner(data.user?.role === "hotelOwner");
+                setIsAdmin(data.user?.role === "admin");
+                setIsSuspended(data.user?.status === "suspended");
                 setSearchedCities(data.recentSearchedCities || []);
             } else {
                 setTimeout(() => {
@@ -64,6 +68,8 @@ export const AppProvider = ({ children }) => {
         } else if (isLoaded) {
             // Only clear when Clerk has fully resolved — not during init
             setIsOwner(false);
+            setIsAdmin(false);
+            setIsSuspended(false);
             setSearchedCities([]);
         }
         fetchRooms();
@@ -73,9 +79,14 @@ export const AppProvider = ({ children }) => {
         currency,
         navigate,
         user,
+        isLoaded,
         getToken,
         isOwner,
         setIsOwner,
+        isAdmin,
+        setIsAdmin,
+        isSuspended,
+        setIsSuspended,
         axios,
         showHotelReg,
         setShowHotelReg,

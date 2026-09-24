@@ -8,8 +8,8 @@ const FeaturedDestination = () => {
   const {rooms,navigate} = useAppContext();
 
   return rooms.length > 0 &&(
-    <div className='flex flex-col items-center px-6 md:px-16 lg:px-24 bg-slate-50 py-20'>
-      <Title title='Featured Destinations' subTitle='Discover our handpicked selection of exceptional properties around the world, offering unparalleled luxury and unforgettable experiences.'/>
+    <div className='flex flex-col items-center px-6 md:px-16 lg:px-24 py-20'>
+      <Title title='Featured Hotels' subTitle='Discover our handpicked selection of exceptional properties around the world, offering unparalleled luxury and unforgettable experiences.'/>
         <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-20 w-full'>
             {rooms.slice(0, 4).map((room, index) => (
  

@@ -90,9 +90,28 @@ export const protect = async (req, res, next) => {
             return res.json({ success: false, message: "User not found in database. Please log in again." });
         }
 
+        if (user.status === "suspended") {
+            return res.status(403).json({ success: false, message: "Your account is suspended." });
+        }
+
         req.user = user;
         next();
     } catch (error) {
         return res.json({ success: false, message: error.message });
     }
+};
+
+// Middleware to check specific roles
+export const requireRole = (...roles) => {
+    return (req, res, next) => {
+        if (!req.user) {
+            return res.status(401).json({ success: false, message: "Unauthenticated" });
+        }
+        
+        if (!roles.includes(req.user.role)) {
+            return res.status(403).json({ success: false, message: "Access denied" });
+        }
+        
+        next();
+    };
 };

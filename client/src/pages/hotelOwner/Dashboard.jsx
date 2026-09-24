@@ -40,6 +40,39 @@ const Dashboard = () => {
     return (
         <div>
             <Title align='left' font='outfit' title='Dashboard' subTitle='Monitor your room listings, track bookings ans analyze revenue-all in one place. Stay updated with real-time insights to ensure smooth operations.' />
+            
+            {/* Status Banner */}
+            {dashboardData.status && (
+                <div className={`p-4 mb-6 rounded border ${
+                    dashboardData.status === 'pending' ? 'bg-yellow-50 border-yellow-200 text-yellow-800' :
+                    dashboardData.status === 'approved' ? 'bg-green-50 border-green-200 text-green-800' :
+                    dashboardData.status === 'rejected' ? 'bg-red-50 border-red-200 text-red-800' :
+                    'bg-orange-50 border-orange-200 text-orange-800'
+                }`}>
+                    <div className="flex items-center gap-2">
+                        <span className="font-semibold capitalize">{
+                            dashboardData.status === 'pending' ? '🟡 Pending Approval' :
+                            dashboardData.status === 'approved' ? '🟢 Approved' :
+                            dashboardData.status === 'rejected' ? '🔴 Rejected' :
+                            '🔴 Suspended'
+                        }</span>
+                    </div>
+                    <p className="mt-1 text-sm">
+                        {dashboardData.status === 'pending' && "Your hotel has been submitted and is waiting for administrator approval."}
+                        {dashboardData.status === 'approved' && "Your hotel is currently visible to customers."}
+                        {dashboardData.status === 'rejected' && `Rejection Reason: ${dashboardData.rejectionReason || 'No reason provided.'}`}
+                        {dashboardData.status === 'suspended' && `Suspension Reason: ${dashboardData.suspensionReason || 'No reason provided.'}`}
+                    </p>
+                    <div className="mt-4">
+                        <button 
+                            onClick={() => window.location.href='/owner/edit-hotel'}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm"
+                        >
+                            Edit Hotel
+                        </button>
+                    </div>
+                </div>
+            )}
             <div className='flex gap-4 my-8'>
                 {/* ---- ---Total Bookings -- */}
                 <div className='bg-primary/3 border border-primary/10 rounded flex p-4 pr-8'>
