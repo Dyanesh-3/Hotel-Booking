@@ -7,8 +7,15 @@ import Stripe from "stripe";
 //Function to check availablity of Room
 const checkAvailability = async ({ checkInDate, checkOutDate, room }) => {
     try {
+        const roomData = await Room.findById(room).populate('hotel');
+        if (!roomData) return false;
+        
+        if (!roomData.isAvailable) return false;
+        if (roomData.hotel.status !== 'approved' || !roomData.hotel.isActive) return false;
+
         const bookings = await Booking.find({
             room,
+            status: { $ne: 'cancelled' },
             checkInDate: { $lt: new Date(checkOutDate) },
             checkOutDate: { $gt: new Date(checkInDate) },
         });
@@ -92,6 +99,8 @@ export const createBooking = async (req, res) => {
             checkInDate: checkIn,
             checkOutDate: checkOut,
             totalPrice,
+            status: "confirmed",
+            paymentStatus: "pending"
         });
 
         // Determine real recipient email
@@ -133,7 +142,7 @@ export const createBooking = async (req, res) => {
         } catch (emailError) {
             console.error("Email sending failed:", emailError.message);
         }
-        res.json({ success: true, message: "Booking created successfully" })
+        res.json({ success: true, message: "Booking created successfully", booking })
 
     } catch (error) {
         console.log(error);
@@ -153,6 +162,41 @@ export const getUserBookings = async (req, res) => {
     }
 }
 
+export const cancelBooking = async (req, res) => {
+    try {
+        const { bookingId } = req.body;
+        const user = req.user._id;
+
+        const booking = await Booking.findOne({ _id: bookingId, user });
+        if (!booking) {
+            return res.json({ success: false, message: "Booking not found or unauthorized" });
+        }
+
+        if (booking.status === 'cancelled') {
+            return res.json({ success: false, message: "Booking is already cancelled" });
+        }
+
+        if (booking.status === 'completed') {
+            return res.json({ success: false, message: "Cannot cancel a completed booking" });
+        }
+
+        booking.status = 'cancelled';
+        if (booking.paymentStatus === 'paid') {
+            // Note: We don't automatically refund Stripe here unless we use the Stripe API.
+            // For now, mark as refunded if we assume a manual/stub refund.
+            // But per instructions: "DO NOT claim a refund unless a real refund operation occurred."
+            // So we'll keep it as 'paid' or mark it for review. The instructions said: 
+            // "If online payment was already completed: DO NOT claim a refund unless a real refund operation occurred."
+            // We just cancel the booking status.
+        }
+
+        await booking.save();
+        res.json({ success: true, message: "Booking cancelled successfully", booking });
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+}
+
 export const getHotelBookings = async (req, res) => {
     try {
         const hotel = await Hotel.findOne({ owner: req.user._id });
@@ -160,16 +204,31 @@ export const getHotelBookings = async (req, res) => {
             return res.json({ success: false, message: "No Hotel found" })
         }
         const bookings = await Booking.find({ hotel: hotel._id }).populate("room hotel user").sort({ createdAt: -1 });
+        const rooms = await Room.find({ hotel: hotel._id });
+
+        const totalRooms = rooms.length;
+        const availableRooms = rooms.filter(r => r.isAvailable).length;
+        const unavailableRooms = totalRooms - availableRooms;
 
         const totalBookings = bookings.length;
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        
+        const upcomingBookings = bookings.filter(b => b.status !== 'cancelled' && new Date(b.checkInDate) >= today).length;
 
-        const totalRevenue = bookings.reduce((acc, booking) => acc + booking.totalPrice, 0)
+        const totalRevenue = bookings.reduce((acc, booking) => acc + (booking.status !== 'cancelled' ? booking.totalPrice : 0), 0)
+        const totalPaidRevenue = bookings.reduce((acc, booking) => acc + (booking.paymentStatus === 'paid' ? booking.totalPrice : 0), 0)
 
         res.json({ 
             success: true, 
             dashboardData: { 
+                totalRooms,
+                availableRooms,
+                unavailableRooms,
                 totalBookings, 
+                upcomingBookings,
                 totalRevenue, 
+                totalPaidRevenue,
                 bookings,
                 status: hotel.status,
                 rejectionReason: hotel.rejectionReason,

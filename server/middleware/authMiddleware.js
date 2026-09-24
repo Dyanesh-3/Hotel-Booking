@@ -31,23 +31,7 @@ export const protect = async (req, res, next) => {
             }
         }
 
-        // 3. Fallback direct JWT payload decoding
-        if (!userId && req.headers.authorization) {
-            try {
-                const token = req.headers.authorization.replace(/^Bearer\s+/i, "").trim();
-                if (token && token !== "null" && token !== "undefined" && token.includes(".")) {
-                    const parts = token.split(".");
-                    if (parts.length >= 2) {
-                        const payload = JSON.parse(Buffer.from(parts[1], "base64").toString("utf-8"));
-                        if (payload && payload.sub) {
-                            userId = payload.sub;
-                        }
-                    }
-                }
-            } catch (err) {
-                console.log("Direct JWT decode error:", err.message);
-            }
-        }
+
 
         if (!userId) {
             console.log("Protect middleware: No userId found for request to", req.originalUrl);

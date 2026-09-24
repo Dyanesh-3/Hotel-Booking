@@ -59,6 +59,7 @@ const AdminBookings = () => {
                                     <th className="px-6 py-3 font-medium text-gray-500">Room</th>
                                     <th className="px-6 py-3 font-medium text-gray-500">Check-in / Out</th>
                                     <th className="px-6 py-3 font-medium text-gray-500">Amount</th>
+                                    <th className="px-6 py-3 font-medium text-gray-500">Status</th>
                                     <th className="px-6 py-3 font-medium text-gray-500">Payment</th>
                                 </tr>
                             </thead>
@@ -75,10 +76,23 @@ const AdminBookings = () => {
                                         </td>
                                         <td className="px-6 py-4 font-medium text-gray-900">{currency} {booking.totalPrice}</td>
                                         <td className="px-6 py-4">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                                booking.isPaid ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                                            <span className={`px-2 py-1 rounded-full text-xs font-medium uppercase ${
+                                                booking.status === 'confirmed' ? 'bg-blue-100 text-blue-700' :
+                                                booking.status === 'completed' ? 'bg-purple-100 text-purple-700' :
+                                                booking.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                                                'bg-gray-100 text-gray-700'
                                             }`}>
-                                                {booking.isPaid ? 'Paid' : 'Pending'}
+                                                {booking.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className={`px-2 py-1 rounded-full text-xs font-medium uppercase ${
+                                                booking.paymentStatus === 'paid' ? 'bg-green-100 text-green-700' : 
+                                                booking.paymentStatus === 'failed' ? 'bg-red-100 text-red-700' :
+                                                booking.paymentStatus === 'refunded' ? 'bg-gray-100 text-gray-700' :
+                                                'bg-yellow-100 text-yellow-700'
+                                            }`}>
+                                                {booking.paymentStatus}
                                             </span>
                                         </td>
                                     </tr>

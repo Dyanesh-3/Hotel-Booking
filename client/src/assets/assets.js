@@ -207,7 +207,6 @@ export const userBookingsDummyData = [
         "guests": 1,
         "status": "pending",
         "paymentMethod": "Stripe",
-        "isPaid": true,
         "createdAt": "2025-04-10T06:42:01.529Z",
         "updatedAt": "2025-04-10T06:43:54.520Z",
         "__v": 0
@@ -223,7 +222,6 @@ export const userBookingsDummyData = [
         "guests": 1,
         "status": "pending",
         "paymentMethod": "Pay At Hotel",
-        "isPaid": false,
         "createdAt": "2025-04-10T06:41:45.873Z",
         "updatedAt": "2025-04-10T06:41:45.873Z",
         "__v": 0
@@ -239,7 +237,6 @@ export const userBookingsDummyData = [
         "guests": 1,
         "status": "pending",
         "paymentMethod": "Pay At Hotel",
-        "isPaid": false,
         "createdAt": "2025-04-10T06:41:20.501Z",
         "updatedAt": "2025-04-10T06:41:20.501Z",
         "__v": 0

@@ -10,7 +10,7 @@ const bookingSchema = new mongoose.Schema({
     guests: {type: Number, required: true},
     status:{
         type: String,
-        enum: ["pending", "confirmed", "cancelled"],
+        enum: ["pending", "confirmed", "cancelled", "completed"],
         default: "pending",
     },
     paymentMethod:{
@@ -18,14 +18,19 @@ const bookingSchema = new mongoose.Schema({
         required: true,
         default: "Pay At Hotel",
     },
-    isPaid: {type: Boolean, default: false}
+    paymentStatus: {
+        type: String,
+        enum: ["pending", "paid", "failed", "refunded"],
+        default: "pending",
+    }
     
 },{timestamps: true}
 );
 
 bookingSchema.index({ room: 1, checkInDate: 1, checkOutDate: 1 });
-bookingSchema.index({ user: 1 });
-bookingSchema.index({ hotel: 1 });
+bookingSchema.index({ user: 1, createdAt: -1 });
+bookingSchema.index({ hotel: 1, createdAt: -1 });
+bookingSchema.index({ paymentStatus: 1 });
 
 const Booking = mongoose.model("Booking", bookingSchema);
 

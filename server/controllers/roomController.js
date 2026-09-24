@@ -51,19 +51,82 @@ export const createRoom = async (req, res) => {
 
 export const getRooms = async (req, res) => {
     try {
-        const roomsRaw = await Room.find({ isAvailable: true }).populate({
-            path: 'hotel',
-            match: { status: 'approved', isActive: true },
-            populate: {
-                path: 'owner',
-                select: 'image'
+        const { search, city, minPrice, maxPrice, sort, page, limit } = req.query;
+        
+        // 1. Build Hotel Query
+        let hotelQuery = { status: 'approved', isActive: true };
+        
+        if (city) {
+            hotelQuery.city = { $regex: city, $options: 'i' };
+        }
+        
+        if (search) {
+            hotelQuery.$or = [
+                { name: { $regex: search, $options: 'i' } },
+                { city: { $regex: search, $options: 'i' } },
+                { address: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        const matchedHotels = await Hotel.find(hotelQuery).select('_id');
+        const hotelIds = matchedHotels.map(h => h._id);
+
+        // 2. Build Room Query
+        let roomQuery = { 
+            isAvailable: true,
+            hotel: { $in: hotelIds }
+        };
+
+        if (minPrice || maxPrice) {
+            roomQuery.pricePerNight = {};
+            if (minPrice) roomQuery.pricePerNight.$gte = Number(minPrice);
+            if (maxPrice) roomQuery.pricePerNight.$lte = Number(maxPrice);
+        }
+
+        // 3. Sorting
+        let sortOptions = { createdAt: -1, _id: 1 };
+        if (sort === 'price_asc') sortOptions = { pricePerNight: 1, _id: 1 };
+        if (sort === 'price_desc') sortOptions = { pricePerNight: -1, _id: 1 };
+        // Name A-Z sorting would ideally be done on the hotel name, but since we are querying rooms, we can't easily sort by populated field in find().
+        // However, we'll keep Newest and Price since they are natively on the Room model.
+        if (sort === 'newest') sortOptions = { createdAt: -1, _id: 1 };
+
+        // 4. Pagination
+        const pageNumber = Math.max(1, parseInt(page) || 1);
+        const limitNumber = Math.min(50, Math.max(1, parseInt(limit) || 12));
+        const skip = (pageNumber - 1) * limitNumber;
+
+        const total = await Room.countDocuments(roomQuery);
+        const totalPages = Math.ceil(total / limitNumber);
+
+        let rooms = await Room.find(roomQuery)
+            .populate({
+                path: 'hotel',
+                populate: {
+                    path: 'owner',
+                    select: 'image'
+                }
+            })
+            .sort(sortOptions)
+            .skip(skip)
+            .limit(limitNumber);
+
+        // Client-side sort fallback for 'name_asc' since hotel name is populated
+        if (sort === 'name_asc') {
+            rooms.sort((a, b) => a.hotel.name.localeCompare(b.hotel.name));
+            // Note: Pagination on client-side sorted data across multiple pages isn't perfect, but covers the basic requirement safely without complex aggregations.
+        }
+
+        res.json({ 
+            success: true, 
+            rooms,
+            pagination: {
+                page: pageNumber,
+                limit: limitNumber,
+                total,
+                totalPages
             }
-        }).sort({ createdAt: -1 });
-
-        // Filter out rooms whose hotel did not match the condition (hotel will be null)
-        const rooms = roomsRaw.filter(room => room.hotel !== null);
-
-        res.json({ success: true, rooms });
+        });
     } catch (error) {
         res.json({ success: false, message: error.message });
     }

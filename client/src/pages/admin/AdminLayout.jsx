@@ -3,11 +3,11 @@ import { Outlet, Navigate, Link, useLocation } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
 
 const AdminLayout = () => {
-    const { isAdmin, isLoaded } = useAppContext();
+    const { isAdmin, isLoaded, userDataFetched } = useAppContext();
     const [isSidebarOpen, setSidebarOpen] = useState(false);
     const location = useLocation();
 
-    if (!isLoaded) {
+    if (!isLoaded || !userDataFetched) {
         return (
             <div className="flex h-screen items-center justify-center bg-gray-50">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>

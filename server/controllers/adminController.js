@@ -4,13 +4,38 @@ import Booking from "../models/Booking.js";
 import User from "../models/User.js";
 import HotelActionHistory from "../models/HotelActionHistory.js";
 
-// GET /api/admin/hotels
 export const getAllHotels = async (req, res) => {
     try {
-        const hotels = await Hotel.find()
+        const { search, status, city } = req.query;
+        let query = {};
+        
+        if (status) query.status = status;
+        if (city) query.city = { $regex: city, $options: 'i' };
+        
+        if (search) {
+            query.$or = [
+                { name: { $regex: search, $options: 'i' } },
+                { city: { $regex: search, $options: 'i' } },
+                { address: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        const hotels = await Hotel.find(query)
             .populate('owner', 'username email image')
             .sort({ createdAt: -1 });
-        res.json({ success: true, hotels });
+
+        // If searching by owner name (since it's populated, we must filter post-query or use aggregation, post-query is safer for small datasets)
+        let filteredHotels = hotels;
+        if (search) {
+            filteredHotels = hotels.filter(h => 
+                (h.owner && h.owner.username.toLowerCase().includes(search.toLowerCase())) || 
+                h.name.toLowerCase().includes(search.toLowerCase()) || 
+                h.city.toLowerCase().includes(search.toLowerCase()) || 
+                h.address.toLowerCase().includes(search.toLowerCase())
+            );
+        }
+
+        res.json({ success: true, hotels: filteredHotels });
     } catch (error) {
         res.json({ success: false, message: error.message });
     }
@@ -34,6 +59,10 @@ export const approveHotel = async (req, res) => {
         const hotelId = req.params.id;
         const hotel = await Hotel.findById(hotelId);
         if (!hotel) return res.json({ success: false, message: "Hotel not found" });
+
+        if (hotel.status !== 'pending' && hotel.status !== 'rejected') {
+            return res.json({ success: false, message: "Only pending or rejected hotels can be approved" });
+        }
 
         hotel.status = "approved";
         hotel.isActive = true;
@@ -68,6 +97,10 @@ export const rejectHotel = async (req, res) => {
 
         const hotel = await Hotel.findById(hotelId);
         if (!hotel) return res.json({ success: false, message: "Hotel not found" });
+        
+        if (hotel.status !== 'pending') {
+            return res.json({ success: false, message: "Only pending hotels can be rejected. Use suspend for approved hotels." });
+        }
 
         hotel.status = "rejected";
         hotel.isActive = false;
@@ -124,6 +157,10 @@ export const reactivateHotel = async (req, res) => {
         const hotelId = req.params.id;
         const hotel = await Hotel.findById(hotelId);
         if (!hotel) return res.json({ success: false, message: "Hotel not found" });
+
+        if (hotel.status !== 'suspended' && hotel.status !== 'rejected') {
+            return res.json({ success: false, message: "Only suspended or rejected hotels can be reactivated/approved" });
+        }
 
         hotel.status = "approved";
         hotel.isActive = true;

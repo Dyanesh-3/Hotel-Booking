@@ -22,6 +22,8 @@ export const AppProvider = ({ children }) => {
     const [searchedCities, setSearchedCities] = useState([]);
     const [rooms, setRooms] = useState([]);
 
+    const [userDataFetched, setUserDataFetched] = useState(false);
+
     const fetchRooms = async () => {
         try {
             const { data } = await axios.get("/api/room");
@@ -39,7 +41,10 @@ export const AppProvider = ({ children }) => {
     const fetchUser = async () => {
         try {
             const token = await getToken();
-            if (!token) return;
+            if (!token) {
+                setUserDataFetched(true);
+                return;
+            }
 
             const { data } = await axios.get("/api/user", {
                 headers: {
@@ -52,6 +57,7 @@ export const AppProvider = ({ children }) => {
                 setIsAdmin(data.user?.role === "admin");
                 setIsSuspended(data.user?.status === "suspended");
                 setSearchedCities(data.recentSearchedCities || []);
+                setUserDataFetched(true);
             } else {
                 setTimeout(() => {
                     fetchUser();
@@ -59,6 +65,7 @@ export const AppProvider = ({ children }) => {
             }
         } catch (error) {
             console.error(error.message);
+            setUserDataFetched(true);
         }
     };
 
@@ -71,6 +78,7 @@ export const AppProvider = ({ children }) => {
             setIsAdmin(false);
             setIsSuspended(false);
             setSearchedCities([]);
+            setUserDataFetched(true);
         }
         fetchRooms();
     }, [user, isLoaded]);
@@ -97,6 +105,7 @@ export const AppProvider = ({ children }) => {
         isSignedIn,
         fetchRooms,
         fetchUser,
+        userDataFetched,
     };
 
     return (

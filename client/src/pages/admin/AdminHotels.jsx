@@ -17,7 +17,11 @@ const AdminHotels = () => {
         setLoading(true);
         try {
             const token = await getToken();
-            const { data } = await axios.get('/api/admin/hotels', {
+            const query = new URLSearchParams();
+            if (searchQuery) query.append('search', searchQuery);
+            if (statusFilter && statusFilter !== 'all') query.append('status', statusFilter);
+            
+            const { data } = await axios.get(`/api/admin/hotels?${query.toString()}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (data.success) {
@@ -34,7 +38,7 @@ const AdminHotels = () => {
 
     useEffect(() => {
         fetchHotels();
-    }, []);
+    }, [searchQuery, statusFilter]);
 
     const handleAction = async (id, action) => {
         try {
@@ -94,20 +98,7 @@ const AdminHotels = () => {
         }
     };
 
-    const filteredHotels = hotels.filter(hotel => {
-        // Status filter
-        if (statusFilter !== 'all' && hotel.status !== statusFilter) return false;
-        
-        // Search filter
-        if (searchQuery) {
-            const query = searchQuery.toLowerCase();
-            const nameMatch = hotel.name.toLowerCase().includes(query);
-            const cityMatch = hotel.city.toLowerCase().includes(query);
-            const ownerMatch = hotel.owner?.username?.toLowerCase().includes(query);
-            return nameMatch || cityMatch || ownerMatch;
-        }
-        return true;
-    });
+    const filteredHotels = hotels;
 
     const getStatusBadge = (status) => {
         const styles = {

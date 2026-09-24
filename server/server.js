@@ -11,6 +11,8 @@ import roomRouter from "./routes/roomRoutes.js";
 import bookingRouter from "./routes/bookingRoutes.js";
 import adminRouter from "./routes/adminRoutes.js";
 import { stripeWebhooks } from "./controllers/stripeWebhooks.js";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 
 connectDB()
 connectCloudinary();
@@ -37,8 +39,18 @@ app.use(cors({
 app.post('/api/stripe', express.raw({ type: "application/json" }), stripeWebhooks);
 
 // Normal JSON middleware
-app.use(express.json())
-app.use(clerkMiddleware())
+app.use(express.json());
+app.use(helmet());
+
+// Rate Limiting
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 200, // limit each IP to 200 requests per windowMs
+    message: { success: false, message: "Too many requests from this IP, please try again later." }
+});
+app.use('/api', limiter);
+
+app.use(clerkMiddleware());
 
 // Ensure DB connected before processing API requests (crucial for Vercel serverless)
 app.use(async (req, res, next) => {
@@ -54,12 +66,23 @@ app.use(async (req, res, next) => {
 app.use("/api/users", clerkWebhooks)
 
 app.get("/", (req, res) => { res.send("API is working"); })
+app.get("/api/health", (req, res) => { res.json({ status: "ok" }); })
 app.use('/api/user', userRouter)
 app.use('/api/hotels', hotelRouter)
 app.use('/api/room', roomRouter);
 app.use('/api/bookings', bookingRouter);
 app.use('/api/booking', bookingRouter);
 app.use('/api/admin', adminRouter);
+
+// Global Error Handler for Production
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    const statusCode = err.statusCode || 500;
+    const message = process.env.NODE_ENV === 'production' 
+        ? 'Internal Server Error' 
+        : err.message;
+    res.status(statusCode).json({ success: false, message });
+});
 
 const PORT = process.env.PORT || 3000;
 

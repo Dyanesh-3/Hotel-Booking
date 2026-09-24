@@ -25,6 +25,10 @@ const hotelSchema = new mongoose.Schema({
     },
 }, { timestamps: true });
 
+hotelSchema.index({ status: 1, isActive: 1 });
+hotelSchema.index({ owner: 1 });
+hotelSchema.index({ city: 1 });
+
 const Hotel = mongoose.model("Hotel", hotelSchema);
 
 export default Hotel;

@@ -9,6 +9,9 @@ const roomSchema = new mongoose.Schema({
     isAvailable: {type: Boolean, default: true}
 },{timestamps: true});
 
+roomSchema.index({ hotel: 1 });
+roomSchema.index({ isAvailable: 1 });
+
 const Room = mongoose.model("Room", roomSchema);
 
 export default Room;

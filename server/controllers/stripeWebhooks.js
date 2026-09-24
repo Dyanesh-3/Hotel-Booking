@@ -31,7 +31,7 @@ export const stripeWebhooks = async (req, res) => {
 
             if (bookingId) {
                 await Booking.findByIdAndUpdate(bookingId, {
-                    isPaid: true,
+                    paymentStatus: "paid",
                     status: "confirmed",
                     paymentMethod: "Stripe",
                 });
@@ -42,7 +42,7 @@ export const stripeWebhooks = async (req, res) => {
 
             if (bookingId) {
                 await Booking.findByIdAndUpdate(bookingId, {
-                    isPaid: true,
+                    paymentStatus: "paid",
                     status: "confirmed",
                     paymentMethod: "Stripe",
                 });

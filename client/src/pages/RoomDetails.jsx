@@ -14,6 +14,7 @@ const RoomDetails = () => {
     const [checkOutDate, setCheckOutDate] = useState(null);
     const [guests, setGuests] = useState(1);
     const [isAvailable, setIsAvailable] = useState(null);
+    const [confirmedBooking, setConfirmedBooking] = useState(null);
 
     const [loading, setLoading] = useState(false);
 
@@ -70,7 +71,7 @@ const RoomDetails = () => {
                 }, { headers: { Authorization: `Bearer ${token}` } })
                 if(data.success){
                     toast.success(data.message)
-                    navigate('/my-bookings')
+                    setConfirmedBooking(data.booking)
                     scrollTo(0,0)
                 }else{
                     toast.error(data.message)
@@ -174,6 +175,28 @@ const RoomDetails = () => {
                 <div className='sticky top-28 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] p-6 rounded-2xl border border-gray-100'>
                     <h3 className='text-2xl font-bold text-gray-900 mb-1'>${room.pricePerNight} <span className='text-base font-normal text-gray-500'>night</span></h3>
                     
+                    {confirmedBooking ? (
+                        <div className='mt-6 p-6 border border-green-200 bg-green-50 rounded-xl flex flex-col items-center text-center'>
+                            <div className='w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-4'>
+                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                            </div>
+                            <h3 className='text-xl font-bold text-gray-900 mb-2'>Booking Confirmed!</h3>
+                            <p className='text-sm text-gray-600 mb-6'>Your reservation at {room.hotel.name} has been successfully created.</p>
+                            
+                            <div className='w-full text-left bg-white p-4 rounded-lg border border-gray-100 mb-6 space-y-3 text-sm'>
+                                <div className='flex justify-between'><span className='text-gray-500'>Booking ID</span><span className='font-medium'>{confirmedBooking._id}</span></div>
+                                <div className='flex justify-between'><span className='text-gray-500'>Check-in</span><span className='font-medium'>{new Date(checkInDate).toLocaleDateString()}</span></div>
+                                <div className='flex justify-between'><span className='text-gray-500'>Check-out</span><span className='font-medium'>{new Date(checkOutDate).toLocaleDateString()}</span></div>
+                                <div className='flex justify-between'><span className='text-gray-500'>Amount</span><span className='font-medium'>{currency}{confirmedBooking.totalPrice || (room.pricePerNight * Math.max(1, Math.ceil((new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()) / (1000 * 3600 * 24))))}</span></div>
+                                <div className='flex justify-between'><span className='text-gray-500'>Payment</span><span className='font-medium text-amber-600'>Pay at Hotel</span></div>
+                            </div>
+                            
+                            <div className='w-full flex flex-col gap-3'>
+                                <button onClick={() => navigate('/my-bookings')} className='w-full py-3 bg-black text-white font-medium rounded-xl hover:bg-gray-800 transition-colors'>View My Bookings</button>
+                                <button onClick={() => navigate('/rooms')} className='w-full py-3 bg-white border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors'>Continue Browsing</button>
+                            </div>
+                        </div>
+                    ) : (
                     <form onSubmit={onSubmitHandler} className='mt-6 flex flex-col gap-4'>
                         <div className='border border-gray-300 rounded-xl overflow-hidden'>
                             <div className='flex border-b border-gray-300'>
@@ -211,6 +234,7 @@ const RoomDetails = () => {
                         
                         <p className='text-center text-sm text-gray-500 mt-2'>You won't be charged yet</p>
                     </form>
+                    )}
                 </div>
             </div>
         </div>
