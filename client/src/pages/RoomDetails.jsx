@@ -90,19 +90,36 @@ const RoomDetails = () => {
         room && setMainImage(room.images?.[0] || 'https://placehold.co/600x400?text=No+Image')
     }, [rooms])
 
-    return room && (
+        if (!rooms || rooms.length === 0) {
+        return (
+            <div className='flex justify-center items-center min-h-screen'>
+                <div className='animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900'></div>
+            </div>
+        )
+    }
+
+    if (!room) {
+        return (
+            <div className='flex flex-col justify-center items-center min-h-screen gap-4'>
+                <h2 className='text-2xl font-bold text-gray-800'>Room Not Found</h2>
+                <button onClick={() => navigate('/rooms')} className='px-6 py-2 bg-black text-white rounded-lg'>Go Back</button>
+            </div>
+        )
+    }
+
+    return (
     <div className='py-28 md:py-35 px-4 md:px-16 lg:px-24 xl:px-32'>
         {/* Room Details */}
         <div className='flex flex-col md:flex-row items-start md:items-center justify-between gap-4'>
             <div>
                 <div className='flex items-center gap-3'>
-                    <h1 className='text-3xl md:text-5xl font-playfair font-bold text-gray-900'>{room.hotel.name}</h1>
+                    <h1 className='text-3xl md:text-5xl font-playfair font-bold text-gray-900'>{room.hotel?.name}</h1>
                     <span className='px-3 py-1 bg-blue-50 text-blue-700 text-sm font-medium rounded-full border border-blue-100'>{room.roomType}</span>
                 </div>
                 {/* Room Address*/}
                 <div className='flex items-center gap-1.5 text-gray-600 mt-3'>
                     <img src={assets.locationIcon} alt="location-icon" className='h-4 opacity-70'/>
-                    <span className='text-sm md:text-base'>{room.hotel.city}, {room.hotel.address}</span>
+                    <span className='text-sm md:text-base'>{room.hotel?.city}, {room.hotel.address}</span>
                 </div>
             </div>
             {/* room Price */}
@@ -130,7 +147,7 @@ const RoomDetails = () => {
                 <h2 className='text-2xl md:text-3xl font-playfair font-bold text-gray-900 mb-6'>About this space</h2>
                 <p className='text-gray-600 leading-relaxed mb-8'>
                     Experience luxury and comfort in our thoughtfully designed {room.roomType}. 
-                    Located in {room.hotel.city}, this space offers everything you need for a perfect stay.
+                    Located in {room.hotel?.city}, this space offers everything you need for a perfect stay.
                 </p>
 
                 <h3 className='text-xl font-medium text-gray-900 mb-4'>What this place offers</h3>
@@ -161,10 +178,10 @@ const RoomDetails = () => {
                 {/* Hosted by */}
                 <div className='border-t border-gray-200 pt-8 mt-8 flex flex-col items-start gap-4'>
                     <div className='flex items-center gap-4'>
-                        <img src={room.hotel.owner.image || 'https://placehold.co/100x100'} alt="Host" className='h-16 w-16 rounded-full border border-gray-200 object-cover'/>
+                        <img src={room.hotel?.owner?.image || 'https://placehold.co/100x100'} alt="Host" className='h-16 w-16 rounded-full border border-gray-200 object-cover'/>
                         <div>
-                            <p className='text-lg font-medium text-gray-900'>Hosted by {room.hotel.owner.username || 'Hotel Manager'}</p>
-                            <p className='text-sm text-gray-500'>{room.hotel.name}</p>
+                            <p className='text-lg font-medium text-gray-900'>Hosted by {room.hotel?.owner?.username || 'Hotel Manager'}</p>
+                            <p className='text-sm text-gray-500'>{room.hotel?.name}</p>
                         </div>
                     </div>
                 </div>
@@ -181,7 +198,7 @@ const RoomDetails = () => {
                                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
                             </div>
                             <h3 className='text-xl font-bold text-gray-900 mb-2'>Booking Confirmed!</h3>
-                            <p className='text-sm text-gray-600 mb-6'>Your reservation at {room.hotel.name} has been successfully created.</p>
+                            <p className='text-sm text-gray-600 mb-6'>Your reservation at {room.hotel?.name} has been successfully created.</p>
                             
                             <div className='w-full text-left bg-white p-4 rounded-lg border border-gray-100 mb-6 space-y-3 text-sm'>
                                 <div className='flex justify-between'><span className='text-gray-500'>Booking ID</span><span className='font-medium'>{confirmedBooking._id}</span></div>
@@ -243,3 +260,4 @@ const RoomDetails = () => {
 }
 
 export default RoomDetails
+
