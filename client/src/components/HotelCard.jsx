@@ -5,7 +5,7 @@ import { assets } from '../assets/assets'
 const Hotelcard = ({room}) => {
   return (
     <Link to={'/rooms/' + room._id} onClick={() => scrollTo(0,0)} className='relative w-full rounded-xl overflow-hidden bg-white text-gray-500 shadow-sm border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300'>
-        <img src={room.images[0]} alt="" className='w-full h-52 object-cover block' />
+        <img src={room.images?.[0] || 'https://placehold.co/600x400?text=No+Image'} alt="" className='w-full h-52 object-cover block' />
         <div className='p-5'>   
             <div className='flex items-center justify-between mb-2'>   
                 <p className='font-playfair text-xl font-bold text-gray-900'>{room.hotel.name}</p>

@@ -159,7 +159,7 @@ const AllRooms = () => {
                 {rooms.map((room) => (
                     <div key={room._id} className='flex flex-col md:flex-row items-start py-8 border-b border-gray-100 gap-8 hover:bg-gray-50/50 p-4 rounded-2xl transition-colors'>
                         <div className="md:w-1/3 shrink-0">
-                            <img onClick={() => { navigate(`/rooms/${room._id}`); window.scrollTo(0, 0) }} src={room.images[0]} alt="hotel-img" title='View Room Details' className='w-full aspect-[4/3] rounded-xl shadow-sm object-cover cursor-pointer hover:shadow-md transition-shadow'/>
+                            <img onClick={() => { navigate(`/rooms/${room._id}`); window.scrollTo(0, 0) }} src={room.images?.[0] || 'https://placehold.co/600x400?text=No+Image'} alt="hotel-img" title='View Room Details' className='w-full aspect-[4/3] rounded-xl shadow-sm object-cover cursor-pointer hover:shadow-md transition-shadow'/>
                         </div>
                         <div className='md:w-2/3 flex flex-col gap-2 pt-2'>
                             <p className='text-sm font-semibold tracking-wider text-blue-600 uppercase'>{room.hotel.city}</p>

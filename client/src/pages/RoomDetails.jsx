@@ -87,7 +87,7 @@ const RoomDetails = () => {
     useEffect(() => {
         const room = rooms.find(room => room._id === id)
         room && setRoom(room)
-        room && setMainImage(room.images[0])
+        room && setMainImage(room.images?.[0] || 'https://placehold.co/600x400?text=No+Image')
     }, [rooms])
 
     return room && (
