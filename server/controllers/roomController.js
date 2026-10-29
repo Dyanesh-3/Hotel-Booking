@@ -179,8 +179,19 @@ export const getRooms = async (req, res) => {
             .skip(skip)
             .limit(limitNumber);
 
+        // Filter out any rooms whose hotel reference failed to populate
+        rooms = rooms.filter(room => room.hotel && room.hotel.name);
+
         if (sort === 'name_asc') {
             rooms.sort((a, b) => a.hotel.name.localeCompare(b.hotel.name));
+        } else if (!sort) {
+            // Prioritize rooms with valid images first
+            rooms.sort((a, b) => {
+                const aHas = (a.images && a.images.length > 0 && a.images[0]) ? 1 : 0;
+                const bHas = (b.images && b.images.length > 0 && b.images[0]) ? 1 : 0;
+                if (bHas !== aHas) return bHas - aHas;
+                return new Date(b.createdAt) - new Date(a.createdAt);
+            });
         }
 
         res.json({ 

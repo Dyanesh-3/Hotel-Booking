@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 
 const HotelReg = () => {
 
-    const { setShowHotelReg, axios, setIsOwner, fetchUser } = useAppContext();
+    const { setShowHotelReg, axios, setIsOwner, fetchUser, fetchRooms } = useAppContext();
     const { getToken, isSignedIn } = useAuth();
     const { user } = useUser();
     const navigate = useNavigate();
@@ -49,6 +49,9 @@ const HotelReg = () => {
                 setShowHotelReg(false);
                 if (fetchUser) {
                     await fetchUser();
+                }
+                if (fetchRooms) {
+                    await fetchRooms();
                 }
             } else {
                 toast.error(data.message);
