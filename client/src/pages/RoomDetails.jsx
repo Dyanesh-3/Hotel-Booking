@@ -5,6 +5,26 @@ import StarRating from '../components/StarRating'
 import { useAppContext } from '../context/AppContext'
 import toast from 'react-hot-toast'
 
+
+const getTodayLocalDate = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+const getNextLocalDate = (baseDateStr) => {
+    if (!baseDateStr) return '';
+    const [y, m, d] = baseDateStr.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    date.setDate(date.getDate() + 1);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 const RoomDetails = () => {
     const { id } = useParams()
     const { rooms, getToken, axios, navigate, user }  = useAppContext()
@@ -17,6 +37,14 @@ const RoomDetails = () => {
     const [confirmedBooking, setConfirmedBooking] = useState(null);
 
     const [loading, setLoading] = useState(false);
+
+    const handleCheckInChange = (newDate) => {
+        setCheckInDate(newDate);
+        setIsAvailable(null);
+        if (checkOutDate && newDate && checkOutDate <= newDate) {
+            setCheckOutDate('');
+        }
+    };
 
     const checkAvailability = async () => {
         try {
@@ -219,11 +247,11 @@ const RoomDetails = () => {
                             <div className='flex border-b border-gray-300'>
                                 <div className='flex-1 p-3 border-r border-gray-300'>
                                     <label htmlFor="checkInDate" className='block text-xs font-bold text-gray-900 uppercase'>Check-In</label>
-                                    <input onChange ={(e)=> { setCheckInDate(e.target.value); setIsAvailable(null); }} min={new Date().toISOString().split('T')[0]} type="date" id='checkInDate' className='w-full text-sm outline-none mt-1 text-gray-600 bg-transparent' required/>
+                                    <input value={checkInDate || ''} onChange={(e) => handleCheckInChange(e.target.value)} min={getTodayLocalDate()} type="date" id='checkInDate' className='w-full text-sm outline-none mt-1 text-gray-600 bg-transparent' required/>
                                 </div> 
                                 <div className='flex-1 p-3'>
                                     <label htmlFor="checkOutDate" className='block text-xs font-bold text-gray-900 uppercase'>Check-Out</label>
-                                    <input onChange ={(e)=> { setCheckOutDate(e.target.value); setIsAvailable(null); }} min={checkInDate} disabled={!checkInDate}  type="date" id='checkOutDate' className='w-full text-sm outline-none mt-1 text-gray-600 bg-transparent' required/>
+                                    <input value={checkOutDate || ''} onChange={(e) => { setCheckOutDate(e.target.value); setIsAvailable(null); }} min={checkInDate ? getNextLocalDate(checkInDate) : getNextLocalDate(getTodayLocalDate())} disabled={!checkInDate} type="date" id='checkOutDate' className='w-full text-sm outline-none mt-1 text-gray-600 bg-transparent' required/>
                                 </div>
                             </div>
                             <div className='p-3'>

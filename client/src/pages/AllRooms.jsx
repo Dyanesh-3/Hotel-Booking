@@ -46,7 +46,7 @@ const AllRooms = () => {
     ];
 
     // Read current state from URL params to ensure it survives refresh
-    const currentCity = searchParams.get('city') || '';
+    const currentCity = searchParams.get('city') || searchParams.get('destination') || '';
     const currentSearch = searchParams.get('search') || '';
     const currentMinPrice = searchParams.get('minPrice') || '';
     const currentMaxPrice = searchParams.get('maxPrice') || '';

@@ -117,3 +117,23 @@ export const resubmitHotel = async (req, res) => {
         res.json({ success: false, message: error.message });
     }
 };
+
+
+// API to get distinct destination cities from approved & active hotels
+export const getDestinations = async (req, res) => {
+    try {
+        const cities = await Hotel.find({ status: "approved", isActive: true }).distinct("city");
+
+        const validCities = cities
+            .filter(city => typeof city === 'string' && city.trim().length > 0)
+            .map(city => city.trim())
+            .filter((city, index, self) => 
+                index === self.findIndex(c => c.toLowerCase() === city.toLowerCase())
+            )
+            .sort((a, b) => a.localeCompare(b));
+
+        res.json({ success: true, destinations: validCities });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};

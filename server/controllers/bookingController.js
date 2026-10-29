@@ -26,26 +26,99 @@ const checkAvailability = async ({ checkInDate, checkOutDate, room }) => {
         return false;
     }
 }
+// Helper function to validate booking dates consistently
+export const validateBookingDates = (checkInDate, checkOutDate) => {
+    if (!checkInDate || !checkOutDate) {
+        return { valid: false, message: "Check-in and check-out dates are required." };
+    }
+
+    const checkIn = new Date(checkInDate);
+    const checkOut = new Date(checkOutDate);
+
+    if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
+        return { valid: false, message: "Invalid date format." };
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const checkInMidnight = new Date(checkIn);
+    checkInMidnight.setHours(0, 0, 0, 0);
+
+    const checkOutMidnight = new Date(checkOut);
+    checkOutMidnight.setHours(0, 0, 0, 0);
+
+    if (checkInMidnight < today) {
+        return { valid: false, message: "Check-in date cannot be in the past." };
+    }
+
+    if (checkOutMidnight <= checkInMidnight) {
+        return { valid: false, message: "Check-out date must be strictly after check-in date." };
+    }
+
+    return { valid: true, checkIn, checkOut };
+};
+
 //API to check availability of room
 // POST /api/bookings/check-availability
-
 export const checkAvailabilityAPI = async (req, res) => {
     try {
         const { room, checkInDate, checkOutDate } = req.body;
-        const isAvailable = await checkAvailability({ checkInDate, checkOutDate, room });
-        res.json({ success: true, isAvailable })
-    } catch (error) {
-        res.json({ success: false, message: error.message })
-    }
-}
-//API to check a new booking
-// POST /api/bookings/book
+        if (!room) {
+            return res.status(400).json({ success: false, message: "Room ID is required" });
+        }
 
+        const dateValidation = validateBookingDates(checkInDate, checkOutDate);
+        if (!dateValidation.valid) {
+            return res.status(400).json({ success: false, message: dateValidation.message });
+        }
+
+        const isAvailable = await checkAvailability({ 
+            checkInDate: dateValidation.checkIn, 
+            checkOutDate: dateValidation.checkOut, 
+            room 
+        });
+        res.json({ success: true, isAvailable });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+//API to create a new booking
+// POST /api/bookings/create
 export const createBooking = async (req, res) => {
     try {
         const { room, checkInDate, checkOutDate, guests, userEmail } = req.body;
         const user = req.user._id;
 
+        if (!room) {
+            return res.status(400).json({ success: false, message: "Room ID is required" });
+        }
+
+        // 1. Validate dates FIRST
+        const dateValidation = validateBookingDates(checkInDate, checkOutDate);
+        if (!dateValidation.valid) {
+            return res.status(400).json({ success: false, message: dateValidation.message });
+        }
+        const { checkIn, checkOut } = dateValidation;
+
+        // 2. Validate guests as a positive integer
+        const parsedGuests = Number(guests);
+        if (!parsedGuests || isNaN(parsedGuests) || parsedGuests < 1 || !Number.isInteger(parsedGuests)) {
+            return res.status(400).json({ success: false, message: "Guest count must be a positive integer." });
+        }
+
+        // 3. Validate Room & Hotel status
+        const roomData = await Room.findById(room).populate("hotel");
+        if (!roomData) {
+            return res.status(404).json({ success: false, message: "Room not found" });
+        }
+
+        if (roomData.hotel.status !== "approved" || !roomData.hotel.isActive) {
+            return res.status(403).json({ success: false, message: "Hotel is not currently available for booking." });
+        }
+
+        // 4. Check availability
         const isAvailable = await checkAvailability({
             checkInDate,
             checkOutDate,
@@ -53,49 +126,20 @@ export const createBooking = async (req, res) => {
         });
 
         if (!isAvailable) {
-            return res.json({ success: false, message: "room is not available" })
+            return res.status(400).json({ success: false, message: "Room is not available for the selected dates." });
         }
 
-        const roomData = await Room.findById(room).populate("hotel");
-        if (!roomData) {
-            return res.json({ success: false, message: "Room not found" });
-        }
-
-        if (roomData.hotel.status !== "approved" || !roomData.hotel.isActive) {
-            return res.status(403).json({ success: false, message: "Hotel is not currently available for booking." });
-        }
-
-        const checkIn = new Date(checkInDate);
-        const checkOut = new Date(checkOutDate);
-
-        if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
-            return res.status(400).json({ success: false, message: "Invalid date format." });
-        }
-        
-        // Truncate times for 'today' comparison to avoid timezone boundary issues
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const checkInStartOfDay = new Date(checkIn);
-        checkInStartOfDay.setHours(0,0,0,0);
-
-        if (checkInStartOfDay < today) {
-            return res.status(400).json({ success: false, message: "Check-in date cannot be in the past." });
-        }
-
-        if (checkOut <= checkIn) {
-            return res.status(400).json({ success: false, message: "Check-out date must be after check-in date." });
-        }
-
+        // 5. Calculate price & create booking
         let totalPrice = roomData.pricePerNight;
-
         const timeDiff = checkOut.getTime() - checkIn.getTime();
         const nights = Math.max(1, Math.ceil(timeDiff / (1000 * 3600 * 24)));
         totalPrice *= nights;
+
         const booking = await Booking.create({
             user,
             room,
             hotel: roomData.hotel._id,
-            guests: +guests,
+            guests: parsedGuests,
             checkInDate: checkIn,
             checkOutDate: checkOut,
             totalPrice,
