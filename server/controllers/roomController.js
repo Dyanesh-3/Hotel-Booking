@@ -10,9 +10,10 @@ export const getUploadSignature = async (req, res) => {
             return res.status(403).json({ success: false, message: "Only hotel owners with a registered hotel can upload room images." });
         }
 
-        const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-        const apiKey = process.env.CLOUDINARY_API_KEY;
-        const apiSecret = process.env.CLOUDINARY_API_SECRET;
+        const config = cloudinary.config();
+        const cloudName = process.env.CLOUDINARY_CLOUD_NAME || config.cloud_name;
+        const apiKey = process.env.CLOUDINARY_API_KEY || config.api_key;
+        const apiSecret = process.env.CLOUDINARY_API_SECRET || config.api_secret;
 
         if (!cloudName || !apiKey || !apiSecret) {
             return res.status(500).json({ success: false, message: "Cloudinary credentials not properly configured on server" });
@@ -61,7 +62,7 @@ export const createRoom = async (req, res) => {
                 : req.body.images;
 
             if (Array.isArray(rawImages)) {
-                const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+                const cloudName = process.env.CLOUDINARY_CLOUD_NAME || cloudinary.config().cloud_name;
                 images = rawImages.filter(url => {
                     if (typeof url !== 'string' || !url.startsWith('https://')) return false;
                     try {
