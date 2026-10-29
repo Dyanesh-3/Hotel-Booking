@@ -20,37 +20,46 @@ const FeaturedDestination = () => {
     // Filter out invalid or orphan rooms
     const validRooms = rooms.filter(room => room && room.hotel && room.hotel.name);
 
-    // Prioritize rooms with valid images
-    const sorted = [...validRooms].sort((a, b) => {
+    // Group rooms by hotel ID
+    const roomsByHotel = new Map();
+    for (const room of validRooms) {
+      const hotelId = room.hotel._id ? room.hotel._id.toString() : room.hotel.toString();
+      if (!hotelId) continue;
+      if (!roomsByHotel.has(hotelId)) {
+        roomsByHotel.set(hotelId, []);
+      }
+      roomsByHotel.get(hotelId).push(room);
+    }
+
+    // For each distinct hotel, pick its best representative room:
+    // 1. Prefer a room with valid Cloudinary images
+    // 2. If multiple rooms have images (or neither has), pick the newest
+    const distinctHotels = [];
+    for (const [hotelId, hotelRooms] of roomsByHotel.entries()) {
+      const sortedRooms = [...hotelRooms].sort((a, b) => {
+        const aHasImg = a.images && a.images.length > 0 && a.images[0] ? 1 : 0;
+        const bHasImg = b.images && b.images.length > 0 && b.images[0] ? 1 : 0;
+        if (bHasImg !== aHasImg) return bHasImg - aHasImg;
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      });
+
+      if (sortedRooms[0]) {
+        distinctHotels.push(sortedRooms[0]);
+      }
+    }
+
+    // Sort distinct hotels: hotels with images first, then by newest
+    distinctHotels.sort((a, b) => {
       const aHasImg = a.images && a.images.length > 0 && a.images[0] ? 1 : 0;
       const bHasImg = b.images && b.images.length > 0 && b.images[0] ? 1 : 0;
-      return bHasImg - aHasImg;
+      if (bHasImg !== aHasImg) return bHasImg - aHasImg;
+      const aDate = new Date(a.hotel?.createdAt || a.createdAt);
+      const bDate = new Date(b.hotel?.createdAt || b.createdAt);
+      return bDate - aDate;
     });
 
-    // Ensure distinct hotels
-    const seenHotels = new Set();
-    const distinct = [];
-
-    for (const room of sorted) {
-      const hotelId = room.hotel._id ? room.hotel._id.toString() : room.hotel.toString();
-      if (!seenHotels.has(hotelId)) {
-        seenHotels.add(hotelId);
-        distinct.push(room);
-      }
-      if (distinct.length >= 4) break;
-    }
-
-    // If fewer than 4 distinct hotels, fill remaining slots with other rooms
-    if (distinct.length < 4) {
-      for (const room of sorted) {
-        if (!distinct.some(r => r._id === room._id)) {
-          distinct.push(room);
-        }
-        if (distinct.length >= 4) break;
-      }
-    }
-
-    return distinct.slice(0, 4);
+    // Apply the 4-card limit only AFTER identifying eligible, distinct hotels
+    return distinctHotels.slice(0, 4);
   }, [rooms]);
 
   return featuredRooms.length > 0 && (
