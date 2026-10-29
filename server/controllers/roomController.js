@@ -2,6 +2,44 @@ import Hotel from "../models/Hotel.js";
 import { v2 as cloudinary } from "cloudinary";
 import Room from "../models/Room.js";
 
+// API to generate signed upload parameters for Cloudinary
+export const getUploadSignature = async (req, res) => {
+    try {
+        const hotel = await Hotel.findOne({ owner: req.user._id });
+        if (!hotel) {
+            return res.status(403).json({ success: false, message: "Only hotel owners with a registered hotel can upload room images." });
+        }
+
+        const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+        const apiKey = process.env.CLOUDINARY_API_KEY;
+        const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+        if (!cloudName || !apiKey || !apiSecret) {
+            return res.status(500).json({ success: false, message: "Cloudinary credentials not properly configured on server" });
+        }
+
+        const timestamp = Math.round(new Date().getTime() / 1000);
+        const folder = "hotel_rooms";
+
+        const signature = cloudinary.utils.api_sign_request(
+            { folder, timestamp },
+            apiSecret
+        );
+
+        res.json({
+            success: true,
+            signature,
+            timestamp,
+            folder,
+            apiKey,
+            cloudName,
+        });
+    } catch (error) {
+        console.error("getUploadSignature error:", error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 // API to create a new room for a hotel
 export const createRoom = async (req, res) => {
     try {
@@ -10,9 +48,36 @@ export const createRoom = async (req, res) => {
 
         if (!hotel) return res.json({ success: false, message: "No Hotel found" });
 
-        // upload images to cloudinary
+        if (!roomType || !pricePerNight) {
+            return res.json({ success: false, message: "Room type and price per night are required" });
+        }
+
         let images = [];
-        if (req.files && req.files.length > 0) {
+
+        // 1. Direct Cloudinary upload flow (images sent as array of URLs)
+        if (req.body.images) {
+            const rawImages = typeof req.body.images === 'string'
+                ? JSON.parse(req.body.images)
+                : req.body.images;
+
+            if (Array.isArray(rawImages)) {
+                const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+                images = rawImages.filter(url => {
+                    if (typeof url !== 'string' || !url.startsWith('https://')) return false;
+                    try {
+                        const parsed = new URL(url);
+                        const isCloudinary = parsed.hostname.includes('cloudinary.com');
+                        const matchesCloud = !cloudName || parsed.pathname.includes(cloudName);
+                        return isCloudinary && matchesCloud;
+                    } catch {
+                        return false;
+                    }
+                });
+            }
+        }
+
+        // 2. Fallback: multipart files if passed (backwards compatibility)
+        if (images.length === 0 && req.files && req.files.length > 0) {
             try {
                 const uploadImages = req.files.map(async (file) => {
                     const response = await cloudinary.uploader.upload(file.path, {
@@ -24,30 +89,34 @@ export const createRoom = async (req, res) => {
                 images = await Promise.all(uploadImages);
             } catch (cloudErr) {
                 console.error("Cloudinary upload error:", cloudErr);
-                // If Cloudinary credentials are rejected (403), provide clear message
                 if (cloudErr.http_code === 403 || cloudErr.message?.includes("403")) {
                     return res.json({
                         success: false,
-                        message: "Cloudinary 403 Forbidden: Invalid or expired Cloudinary credentials. Please check CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in server/.env"
+                        message: "Cloudinary 403 Forbidden: Invalid or expired Cloudinary credentials."
                     });
                 }
                 throw cloudErr;
             }
         }
 
+        if (images.length === 0) {
+            return res.json({ success: false, message: "Please provide valid room images" });
+        }
+
         await Room.create({
             hotel: hotel._id,
             roomType,
             pricePerNight: +pricePerNight,
-            amenities: typeof amenities === 'string' ? JSON.parse(amenities) : amenities,
+            amenities: typeof amenities === 'string' ? JSON.parse(amenities) : (amenities || []),
             images,
         });
+
         res.json({ success: true, message: "Room created successfully" });
     } catch (error) {
         console.error("createRoom error:", error);
         res.json({ success: false, message: error.message });
     }
-}
+};
 
 export const getRooms = async (req, res) => {
     try {
@@ -87,8 +156,6 @@ export const getRooms = async (req, res) => {
         let sortOptions = { createdAt: -1, _id: 1 };
         if (sort === 'price_asc') sortOptions = { pricePerNight: 1, _id: 1 };
         if (sort === 'price_desc') sortOptions = { pricePerNight: -1, _id: 1 };
-        // Name A-Z sorting would ideally be done on the hotel name, but since we are querying rooms, we can't easily sort by populated field in find().
-        // However, we'll keep Newest and Price since they are natively on the Room model.
         if (sort === 'newest') sortOptions = { createdAt: -1, _id: 1 };
 
         // 4. Pagination
@@ -111,10 +178,8 @@ export const getRooms = async (req, res) => {
             .skip(skip)
             .limit(limitNumber);
 
-        // Client-side sort fallback for 'name_asc' since hotel name is populated
         if (sort === 'name_asc') {
             rooms.sort((a, b) => a.hotel.name.localeCompare(b.hotel.name));
-            // Note: Pagination on client-side sorted data across multiple pages isn't perfect, but covers the basic requirement safely without complex aggregations.
         }
 
         res.json({ 
@@ -130,7 +195,7 @@ export const getRooms = async (req, res) => {
     } catch (error) {
         res.json({ success: false, message: error.message });
     }
-}
+};
 
 export const getOwnerRooms = async (req, res) => {
     try {
@@ -143,14 +208,13 @@ export const getOwnerRooms = async (req, res) => {
     } catch (error) {
         res.json({ success: false, message: error.message });
     }
-}
+};
 
 export const toggleRoomAvailability = async (req, res) => {
     try {
         const { roomId } = req.body;
         const owner = req.user._id;
 
-        // Check if the owner's hotel matches the room's hotel
         const hotel = await Hotel.findOne({ owner });
         if (!hotel) {
             return res.json({ success: false, message: "No Hotel found for owner" });
@@ -171,4 +235,4 @@ export const toggleRoomAvailability = async (req, res) => {
     } catch (error) {
         res.json({ success: false, message: error.message });
     }
-}
+};

@@ -32,28 +32,79 @@ const AddRoom = () => {
 
   const onSubmitHandler = async (e) => {
     e.preventDefault()
-    // check if all inputs are filled
-    if (!inputs.roomType || !inputs.pricePerNight || !inputs.amenities || !Object.values(images).some(image => image)) {
-      toast.error("Please fill in all the details")
+
+    const selectedFiles = Object.values(images).filter(Boolean)
+    if (!inputs.roomType || !inputs.pricePerNight || !inputs.amenities || selectedFiles.length === 0) {
+      toast.error("Please fill in all the details and select at least one image")
       return;
     }
+
+    // Client-side file validation
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg']
+    for (const file of selectedFiles) {
+      if (!allowedTypes.includes(file.type)) {
+        toast.error(`Invalid file type (${file.name}). Only JPG, PNG, and WebP are allowed.`)
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`File ${file.name} is too large. Maximum allowed size is 5MB.`)
+        return;
+      }
+    }
+
     setLoading(true);
     try {
-      const formData = new FormData()
-      formData.append('roomType', inputs.roomType)
-      formData.append('pricePerNight', inputs.pricePerNight)
-      // Converting Amenities to Array & keeping only enabled Amenities
-      const amenities = Object.keys(inputs.amenities).filter(key => inputs.amenities[key])
-      formData.append('amenities', JSON.stringify(amenities))
+      const token = await getToken()
 
-      // Adding Images to FormData
-      Object.keys(images).forEach((key) => {
-        images[key] && formData.append('images', images[key])
+      // 1. Request signed upload parameters from backend
+      const { data: sigData } = await axios.get('/api/room/upload-signature', {
+        headers: { Authorization: `Bearer ${token}` }
       })
 
-      const token = await getToken()
-      const { data } = await axios.post('/api/room', formData, {
-        headers: { Authorization: `Bearer ${await getToken()}` }
+      if (!sigData.success) {
+        toast.error(sigData.message || "Failed to authorize image upload")
+        setLoading(false);
+        return;
+      }
+
+      // 2. Upload images directly from browser to Cloudinary
+      const uploadPromises = selectedFiles.map(async (file) => {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('api_key', sigData.apiKey)
+        formData.append('timestamp', sigData.timestamp)
+        formData.append('signature', sigData.signature)
+        formData.append('folder', sigData.folder)
+
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${sigData.cloudName}/image/upload`, {
+          method: 'POST',
+          body: formData,
+        })
+
+        const data = await res.json()
+        if (!res.ok || !data.secure_url) {
+          throw new Error(data.error?.message || "Cloudinary image upload failed")
+        }
+        return data.secure_url
+      })
+
+      const uploadedImageUrls = await Promise.all(uploadPromises)
+
+      // 3. Send lightweight JSON room details & image URLs to the room-creation API
+      const amenities = Object.keys(inputs.amenities).filter(key => inputs.amenities[key])
+
+      const payload = {
+        roomType: inputs.roomType,
+        pricePerNight: inputs.pricePerNight,
+        amenities: JSON.stringify(amenities),
+        images: uploadedImageUrls,
+      }
+
+      const { data } = await axios.post('/api/room', payload, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
       })
 
       if (data.success) {
