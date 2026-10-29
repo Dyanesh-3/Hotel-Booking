@@ -1,15 +1,15 @@
-import Hotel from "../models/Hotel.js"
-import User from "../models/User.js"
+import Hotel from "../models/Hotel.js";
+import User from "../models/User.js";
 import HotelActionHistory from "../models/HotelActionHistory.js";
 
 export const registerHotel = async(req,res)=>{
      try{
         const {name, address, contact, city} = req.body;
-        const owner = req.user._id
+        const owner = req.user._id;
 
-        const hotel = await Hotel.findOne({owner})
+        const hotel = await Hotel.findOne({owner});
         if(hotel){
-            return res.json({ success: false, message: "Hotel Already Registered"})
+            return res.json({ success: false, message: "Hotel Already Registered"});
         }
         const newHotel = await Hotel.create({
             name, 
@@ -17,8 +17,8 @@ export const registerHotel = async(req,res)=>{
             contact, 
             city, 
             owner,
-            status: "pending",
-            isActive: false
+            status: "approved",
+            isActive: true
         });
         await User.findByIdAndUpdate(owner, {role: "hotelOwner"});
 
@@ -31,11 +31,11 @@ export const registerHotel = async(req,res)=>{
             });
         }
 
-        res.json({success: true, message: "Hotel Registered Successfully"})
+        res.json({success: true, message: "Hotel Registered Successfully"});
      } catch(error){
-        res.json({success: false, message: error.message})
+        res.json({success: false, message: error.message});
      }
-}
+};
 
 export const getOwnerHotel = async (req, res) => {
     try {
@@ -97,8 +97,8 @@ export const resubmitHotel = async (req, res) => {
             return res.json({ success: false, message: "Only rejected hotels can be resubmitted" });
         }
 
-        hotel.status = "pending";
-        hotel.isActive = false;
+        hotel.status = "approved";
+        hotel.isActive = true;
         hotel.rejectionReason = "";
 
         await hotel.save();
